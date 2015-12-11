@@ -6,6 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 function edd_ti_metabox( $payment_id ) {
 	$tracking_id = edd_ti_get_payment_tracking_id( $payment_id );
+	$was_sent    = edd_get_payment_meta( $payment_id, 'edd_tracking_info_sent', true );
 	?>
 	<div id="edd-payment-tracking" class="postbox">
 		<h3 class="hndle"><span><?php _e( 'Tracking Info', 'edd-tracking-info' ); ?></span></h3>
@@ -14,8 +15,10 @@ function edd_ti_metabox( $payment_id ) {
 			<input type="text" name="edd_payment_tracking_id" value="<?php echo $tracking_id; ?>" class="regular-text" />
 			<?php if ( ! empty( $tracking_id ) ) : ?>
 			<?php wp_nonce_field( 'edd-ti-send-tracking', 'edd-ti-send-tracking', false, true ); ?>
-			<span class="button-secondary" id="edd-tracking-info-notify-customer" data-payment="<?php echo $payment_id; ?>"><?php _e( 'Notify Customer', 'edd-tracking-info' ); ?></span>
-			<span class="spinner"></span><span class="edd-tracking-info-email-message"></span>
+			<?php $notify_button_text = empty( $was_sent ) ? __( 'Send Tracking Info', 'edd-tracking-info' ) : __( 'Resend Tracking Info', 'edd-tracking-info' ); ?>
+			<span class="button-secondary" id="edd-tracking-info-notify-customer" data-payment="<?php echo $payment_id; ?>"><?php echo $notify_button_text; ?></span>
+			<span class="edd-tracking-info-email-message"></span>
+			<span class="spinner"></span>
 			<p>
 				<?php _e( 'Track shipment', 'edd-tracking-info' ); ?>:&nbsp;<a href="<?php echo edd_ti_get_payment_tracking_link( $payment_id ); ?>" target="_blank"><?php echo $tracking_id; ?></a>
 			</p>
@@ -78,6 +81,11 @@ function edd_ti_send_tracking( $post ) {
 
 	$response = array( 'success' => $result );
 	$response['message'] = $result ? __( 'Email sent.', 'edd-tracking-info' ) : __( 'Error sending email. Try again later.', 'edd-tracking-info' );
+
+	if ( $result ) {
+		edd_update_payment_meta( $post['payment_id'], 'edd_tracking_info_sent', true );
+		edd_insert_payment_note( $post['payment_id'], sprintf( __( 'Tracking information sent to %s.', 'edd-tracking-info' ), $to_email ) );
+	}
 
 	echo json_encode( $response );
 	die();

@@ -1,13 +1,15 @@
 jQuery(document).ready(function ($) {
 	$('#edd-tracking-info-notify-customer').click( function(e) {
 		e.preventDefault();
-		$(this).next('.spinner').css('visibility', 'visible');
+		var spinner = $(this).parent().find('.spinner');
+		spinner.css('visibility', 'visible');
 		$(this).attr('disabled', 'disabled');
 
 		var payment_id      = $(this).data('payment');
 		var nonce           = $('#edd-ti-send-tracking').val();
+		var notice_wrapper  = $('.edd-tracking-info-email-message');
 
-		$('.edd-tracking-info-email-message').html('');
+		notice_wrapper.html('').removeClass('edd-ti-success edd-ti-fail');
 
 		var postData = {
 			edd_action:   'send-tracking',
@@ -16,10 +18,16 @@ jQuery(document).ready(function ($) {
 		};
 
 		$.post(ajaxurl, postData, function (response) {
-			$('.edd-tracking-info-email-message').html(response.message);
-		});
+			if ( true == response.success ) {
+				notice_wrapper.addClass('edd-ti-success');
+				setTimeout(function(){ location.reload(); }, 2000);
+			} else {
+				notice_wrapper.addClass('edd-ti-fail');
+			}
+			notice_wrapper.html(response.message);
+			spinner.css('visibility', 'hidden');
+			$(this).removeAttr('disabled');
+		}, 'json');
 
-		$(this).next('.spinner').css('visibility', 'hidden');
-		$(this).attr('disabled', false);
 	});
 });
